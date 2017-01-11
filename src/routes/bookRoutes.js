@@ -1,53 +1,57 @@
 var express = require('express');
+var mongodb = require('mongodb').MongoClient;
+var objectId = require('mongodb').ObjectID;
+
 
 var bookRouter = express.Router();
 
 
 var router = function(nav){
 
-    var books = [
-            {
-                title : 'Harry Potter e a Pedra Filosofal',
-                genre : 'Aventura',
-                author : 'J.K. Rowling',
-                read : false
-            },
-            {
-                title : 'Game of Thrones',
-                genre : 'Guerra',
-                author : 'Maquiavel',
-                read : false
-            },
-            {
-                title : 'Pequeno principe',
-                genre : 'Romance',
-                author : 'Shakespeare',
-                read : false
-            }
-
-        ];
-
     bookRouter.route('/')
         .get(function(req, res){
-            res.render('bookListView',{title: 'books', 
-            nav: nav,
-            books : books
+
+            var url = 'mongodb://localhost:27017/libraryApp';
+
+            mongodb.connect(url, function(err, db){
+                var collection = db.collection('books');
+
+                collection.find({}).toArray(
+                    function(err, results){                        
+                        res.render('bookListView',{title: 'books', 
+                        nav: nav,
+                        books : results
+                        });
+                    });
             });
+
+
+
         });
 
     bookRouter.route('/:id')
         .get(function(req,res){
-            var id = req.params.id;
+            var id = new objectId(req.params.id);
 
-            res.render('bookView',{
-                title: 'books', 
-                nav: nav,
-                book : books[id]
+            var url = 'mongodb://localhost:27017/libraryApp';
+
+            mongodb.connect(url, function(err, db){
+                var collection = db.collection('books');
+
+                collection.findOne({ _id : id }, function(err, result){                        
+                        res.render('bookView',{
+                            title: 'books', 
+                            nav: nav,
+                            book : result
+                        });
+                    });
             });
+
+
         });
         
     return bookRouter;
-}
+};
 
 
 module.exports = router;
